@@ -23,9 +23,10 @@ class UserSerializer(serializers.ModelSerializer):
     def validate(self, clean_data):
         password = clean_data.get('password')
         password_confirmation = clean_data.pop('password_confirmation')
-        if not password or password != password_confirmation:
-            raise serializers.ValidationError({'password_confirmation': "Passwords do not match"})
-        return clean_data
+
+        if password_validation.validate_password(password) is None and password == password_confirmation:
+            return clean_data
+        raise serializers.ValidationError({'password_confirmation': "Passwords do not match"})
 
 
 class ProductSerializer(serializers.ModelSerializer):

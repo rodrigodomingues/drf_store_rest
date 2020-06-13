@@ -7,10 +7,10 @@ from .models import User, Product, OrderItem, Order
 from .serializers import UserSerializer, ProductSerializer, OrderSerializer, OrderItemSerializer
 
 
-class UserRegisterAPIView(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    permission_classes = (permissions.DjangoModelPermissions,)
+class UserRegisterAPIView(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = (permissions.AllowAny, )
 
 
 class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
