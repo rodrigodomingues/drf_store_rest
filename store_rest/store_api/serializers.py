@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.db.models import Sum
 from django.contrib.auth import password_validation
 
 from .models import User, Product, Order, OrderItem
@@ -24,30 +23,24 @@ class UserSerializer(serializers.ModelSerializer):
     def validate(self, clean_data):
         password = clean_data.get('password')
         password_confirmation = clean_data.pop('password_confirmation')
-        if not password or password != password_confirmation:
-            raise serializers.ValidationError({'password_confirmation': "Passwords do not match"})
-        return clean_data
-    # No need for validation fields. email is a field with custom validation
+
+        if password_validation.validate_password(password) is None and password == password_confirmation:
+            return clean_data
+        raise serializers.ValidationError({'password_confirmation': "Passwords do not match"})
 
 
 class ProductSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Product
         fields = (
+            'id',
             'name',
             'description',
             'price'
         )
 
-    def validate_price(self, value):
-        if value < 0:
-            raise serializers.ValidationError('Price must be a positive value')
-        return value
-
 
 class OrderItemSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = OrderItem
         fields = (
@@ -56,11 +49,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
             'quantity',
             'item_total'
         )
-
-    def validate_quantity(self, value):
-        if value < 1:
-            raise serializers.ValidationError('Quantity must be greater than or equal to 1')
-        return value
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -75,4 +63,3 @@ class OrderSerializer(serializers.ModelSerializer):
             'items',
             'order_total',
         )
-

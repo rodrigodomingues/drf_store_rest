@@ -1,3 +1,6 @@
+from decimal import Decimal
+
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db.models import Sum, F, DecimalField
@@ -9,7 +12,7 @@ class UserManager(BaseUserManager):
 
     use_in_migrations = True
 
-    def _create_user(self,email,password, **extra_fields):
+    def _create_user(self, email, password, **extra_fields):
         """Create and save a User with the given email and password."""
         if not email:
             raise ValueError('the email must be set')
@@ -38,12 +41,10 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
 
-
-# Create your models here.
 class Base(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    active = models.BooleanField(default=True) #  Used for logical deletion
+    active = models.BooleanField(default=True)  # Used for logical deletion
 
     class Meta:
         abstract = True
@@ -67,7 +68,11 @@ class User(AbstractUser):
 class Product(Base):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=False)
-    price = models.DecimalField(max_digits=7 ,decimal_places=2)
+    price = models.DecimalField(
+        max_digits=7,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
 
     class Meta:
         verbose_name = 'Product'
@@ -91,14 +96,18 @@ class Order(Base):
 
     @property
     def order_total(self):
-        total = self.items.aggregate(order_total = Sum(F('quantity') * F('product__price'), output_field=DecimalField())).get('order_total')
+        total = self.items.aggregate(
+            order_total=Sum(F('quantity') * F('product__price'), output_field=DecimalField())).get('order_total')
         return total
 
 
 class OrderItem(Base):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=1)
+    quantity = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)]
+    )
 
     class Meta:
         unique_together = ('order', 'product')

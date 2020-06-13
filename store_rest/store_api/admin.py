@@ -5,7 +5,6 @@ from django.utils.translation import ugettext_lazy as _
 from .models import User, Product, Order, OrderItem
 
 
-# Register your models here.
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
     """Define admin model for custom User model with email field replacing username"""
