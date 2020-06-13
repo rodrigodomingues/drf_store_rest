@@ -1,3 +1,6 @@
+from decimal import Decimal
+
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db.models import Sum, F, DecimalField
@@ -65,7 +68,11 @@ class User(AbstractUser):
 class Product(Base):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=False)
-    price = models.DecimalField(max_digits=7, decimal_places=2)
+    price = models.DecimalField(
+        max_digits=7,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
 
     class Meta:
         verbose_name = 'Product'
@@ -97,7 +104,10 @@ class Order(Base):
 class OrderItem(Base):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=1)
+    quantity = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)]
+    )
 
     class Meta:
         unique_together = ('order', 'product')

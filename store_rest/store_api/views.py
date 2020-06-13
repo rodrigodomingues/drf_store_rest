@@ -1,3 +1,4 @@
+from django.db.models import Sum, F, DecimalField
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -41,9 +42,16 @@ class ProductsViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
-    @action(detail=True, methods=['get'])
+    @action(detail=False, methods=['get'])
     def high_orders(self, request, pk=None):
-        pass
+        # Products where orders are > 100
+        high_orders = Order.objects.annotate(
+            total=Sum(
+                F('items__quantity') * F('items__product__price'), output_field=DecimalField()
+            )).filter(total__gt=100)
+        products = self.queryset.filter(orderitem__order__in=high_orders)
+        serializer = self.serializer_class(products, many=True)
+        return Response(serializer.data)
 
 
 class OrdersViewSet(viewsets.ModelViewSet):
@@ -57,6 +65,5 @@ class OrderViewSet(viewsets.ModelViewSet):
 
 
 class OrderItemViewSet(viewsets.ModelViewSet):
-    permission_classes = (permissions.DjangoModelPermissions,)
     queryset = OrderItem.objects.all()
     serializer_class = OrderItemSerializer

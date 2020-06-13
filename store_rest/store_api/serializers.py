@@ -39,11 +39,6 @@ class ProductSerializer(serializers.ModelSerializer):
             'price'
         )
 
-    def validate_price(self, value):
-        if value < 0:
-            raise serializers.ValidationError('Price must be a positive value')
-        return value
-
 
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,11 +49,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
             'quantity',
             'item_total'
         )
-
-    def validate_quantity(self, value):
-        if value < 1:
-            raise serializers.ValidationError('Quantity must be greater than or equal to 1')
-        return value
 
 
 class OrderSerializer(serializers.ModelSerializer):

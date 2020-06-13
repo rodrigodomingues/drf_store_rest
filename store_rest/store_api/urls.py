@@ -28,23 +28,34 @@ urlpatterns = [
     })),
 
     path('orders/', OrdersViewSet.as_view({
-        'get': 'list'
+        'get': 'list',
+        'post': 'create'
     })),
     path('order/<int:pk>', OrdersViewSet.as_view({
         'get': 'retrieve',
         'put': 'update'
     })),
+
+    path('order_items/', OrderItemViewSet.as_view({
+        'get': 'list',
+        'post': 'create'
+    })),
+
     path('order_item/<int:pk>', OrderItemViewSet.as_view({
         'get': 'retrieve',
         'put': 'update'
     })),
 
     path('products/', ProductsViewSet.as_view({
-        'get': 'list'
+        'get': 'list',
+        'post': 'create'
     })),
     path('product/<int:pk>', ProductsViewSet.as_view({
         'get': 'retrieve',
         'put': 'update'
+    })),
+    path('product/<int:pk>/high_orders', ProductsViewSet.as_view({
+        'get': 'high_orders',
     })),
 ]
 
