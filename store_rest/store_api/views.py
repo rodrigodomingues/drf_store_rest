@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -14,7 +13,6 @@ class UserRegisterAPIView(mixins.CreateModelMixin, viewsets.GenericViewSet):
     serializer_class = UserSerializer
 
 
-# Create your views here.
 class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     permission_classes = (permissions.DjangoModelPermissions,)
     queryset = User.objects.all()
@@ -36,8 +34,8 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
 
 
 class ProductViewSet(mixins.UpdateModelMixin,
-                      mixins.RetrieveModelMixin,
-                      viewsets.GenericViewSet):
+                     mixins.RetrieveModelMixin,
+                     viewsets.GenericViewSet):
     permission_classes = (permissions.DjangoModelPermissions,)
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
