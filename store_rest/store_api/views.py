@@ -10,15 +10,14 @@ from .serializers import UserSerializer, ProductSerializer, OrderSerializer, Ord
 class UserRegisterAPIView(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (permissions.AllowAny, )
+    permission_classes = (permissions.AllowAny,)
 
 
-class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    permission_classes = (permissions.DjangoModelPermissions,)
+class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-    @action(detail=True, methods=['get'])
+    @action(detail=False)
     def orders(self, request, pk=None):
         self.pagination_class.page_size = 10
         orders = Order.objects.filter(user_id=pk)
@@ -33,18 +32,12 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         return Response(serializer.data)
 
 
-class ProductViewSet(mixins.UpdateModelMixin,
-                     mixins.RetrieveModelMixin,
-                     viewsets.GenericViewSet):
-    permission_classes = (permissions.DjangoModelPermissions,)
+class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
 
-class ProductsViewSet(mixins.ListModelMixin,
-                      mixins.CreateModelMixin,
-                      viewsets.GenericViewSet):
-    permission_classes = (permissions.DjangoModelPermissions,)
+class ProductsViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
@@ -53,18 +46,12 @@ class ProductsViewSet(mixins.ListModelMixin,
         pass
 
 
-class OrdersViewSet(mixins.ListModelMixin,
-                    mixins.CreateModelMixin,
-                    viewsets.GenericViewSet):
-    permission_classes = (permissions.DjangoModelPermissions,)
+class OrdersViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
 
-class OrderViewSet(mixins.UpdateModelMixin,
-                   mixins.RetrieveModelMixin,
-                   viewsets.GenericViewSet):
-    permission_classes = (permissions.DjangoModelPermissions,)
+class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 

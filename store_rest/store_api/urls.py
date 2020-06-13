@@ -4,9 +4,7 @@ from rest_framework.routers import SimpleRouter
 from .views import (
     UserRegisterAPIView,
     UserViewSet,
-    ProductViewSet,
     ProductsViewSet,
-    OrderViewSet,
     OrdersViewSet,
     OrderItemViewSet
 )
@@ -17,13 +15,37 @@ urlpatterns = [
     path('register/', UserRegisterAPIView.as_view({
         'post': 'create'
     })),
+
+    path('users/', UserViewSet.as_view({
+        'get': 'list'
+    })),
+    path('user/<int:pk>', UserViewSet.as_view({
+        'get': 'retrieve',
+        'put': 'update'
+    })),
+    path('user/<int:pk>/orders', UserViewSet.as_view({
+        'get': 'orders'
+    })),
+
+    path('orders/', OrdersViewSet.as_view({
+        'get': 'list'
+    })),
+    path('order/<int:pk>', OrdersViewSet.as_view({
+        'get': 'retrieve',
+        'put': 'update'
+    })),
+    path('order_item/<int:pk>', OrderItemViewSet.as_view({
+        'get': 'retrieve',
+        'put': 'update'
+    })),
+
+    path('products/', ProductsViewSet.as_view({
+        'get': 'list'
+    })),
+    path('product/<int:pk>', ProductsViewSet.as_view({
+        'get': 'retrieve',
+        'put': 'update'
+    })),
 ]
 
-router.register('user', UserViewSet)
-# router.register('orders', OrdersViewSet)
-# router.register('order', OrderViewSet)
-# router.register('order_item', OrderItemViewSet)
-# router.register('products', ProductsViewSet)
-# router.register('product', ProductViewSet)
-#
 urlpatterns += router.urls
