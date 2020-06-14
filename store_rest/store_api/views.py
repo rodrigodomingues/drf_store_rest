@@ -1,10 +1,12 @@
+import logging
+
 from django.shortcuts import render
 from django.db.models import Sum, F, DecimalField
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
+
 from rest_framework.response import Response
 from rest_framework import permissions
-
 from .models import User, Product, OrderItem, Order
 from .serializers import UserSerializer, ProductSerializer, OrderSerializer, OrderItemSerializer
 
@@ -12,6 +14,7 @@ from .serializers import UserSerializer, ProductSerializer, OrderSerializer, Ord
 class UserRegisterAPIView(viewsets.ModelViewSet):
     """
     Class responsible to process the requests for User register
+    This is splitted from the other user viewset class due to allowing the operation without permissions
     """
     # The model object to be queried
     queryset = User.objects.all()
@@ -19,6 +22,14 @@ class UserRegisterAPIView(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     # Allow the request to be processed if there is permission
     permission_classes = (permissions.AllowAny,)
+
+    @classmethod
+    def register_view(cls):
+        return cls.as_view(
+            {
+                'post': 'create'
+            }
+        )
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -53,6 +64,25 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = OrderItemSerializer(orders_items, many=True)
         return Response(serializer.data)
 
+    @classmethod
+    def users_view(cls):
+        return cls.as_view({
+            'get': 'list'
+        })
+
+    @classmethod
+    def user_view(cls):
+        return cls.as_view({
+            'get': 'retrieve',
+            'put': 'update'
+        })
+
+    @classmethod
+    def user_orders_view(cls):
+        return cls.as_view({
+            'get': 'orders'
+        })
+
 
 class ProductsViewSet(viewsets.ModelViewSet):
     """
@@ -86,6 +116,31 @@ class ProductsViewSet(viewsets.ModelViewSet):
         serializer = self.serializer_class(products, many=True)
         return Response(serializer.data)
 
+    @classmethod
+    def products_view(cls):
+        return cls.as_view({
+            'get': 'list'
+        })
+
+    @classmethod
+    def product_create_view(cls):
+        return cls.as_view({
+            'post': 'create'
+        })
+
+    @classmethod
+    def product_view(cls):
+        return cls.as_view({
+            'get': 'retrieve',
+            'put': 'update'
+        })
+
+    @classmethod
+    def product_high_orders_view(cls):
+        return cls.as_view({
+            'get': 'high_orders'
+        })
+
 
 class OrdersViewSet(viewsets.ModelViewSet):
     """
@@ -96,6 +151,25 @@ class OrdersViewSet(viewsets.ModelViewSet):
     # The serializer to process the data objects
     serializer_class = OrderSerializer
 
+    @classmethod
+    def orders_view(cls):
+        return cls.as_view({
+            'get': 'list'
+        })
+
+    @classmethod
+    def orders_create_view(cls):
+        return cls.as_view({
+            'post': 'create'
+        })
+
+    @classmethod
+    def order_view(cls):
+        return cls.as_view({
+            'get': 'retrieve',
+            'put': 'update'
+        })
+
 
 class OrderItemViewSet(viewsets.ModelViewSet):
     """
@@ -105,3 +179,17 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     queryset = OrderItem.objects.all()
     # The serializer to process the data objects
     serializer_class = OrderItemSerializer
+
+    @classmethod
+    def order_items_view(cls):
+        return cls.as_view({
+            'get': 'list',
+            'post': 'create'
+        })
+
+    @classmethod
+    def order_item_view(cls):
+        return cls.as_view({
+            'get': 'retrieve',
+            'put': 'update'
+        })
