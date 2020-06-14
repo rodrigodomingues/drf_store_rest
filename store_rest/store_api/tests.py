@@ -1,6 +1,6 @@
 import logging
 from django.test import TestCase
-from django.urls import reverse
+from rest_framework.reverse import reverse
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIRequestFactory, APIClient
@@ -55,20 +55,20 @@ class StoreRestTestCase(TestCase):
             "password": "wefcwefew2",
             "password_confirmation": "wefcwefew2",
             "birth_date": "1999-09-19"}
-        res_easy_password = self.client.post(reverse('register'), data=easy_password)
-        res_no_password_confirmation = self.client.post('register', data=no_password_confirmation)
-        res_user1 = self.client.post('register', data=user1)
-        res_email_exists = self.client.post('register', data=email_exists)
-        res_birth_date_wrong = self.client.post('register', data=birth_date_wrong)
-        res_user2 = self.client.post('register', data=user2)
-        res_user3 = self.client.post('register', data=user3)
-        self.assertEqual(res_easy_password, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(res_no_password_confirmation, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(res_user1, status.HTTP_201_CREATED)
-        self.assertEqual(res_email_exists, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(res_birth_date_wrong, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(res_user2, status.HTTP_201_CREATED)
-        self.assertEqual(res_user3, status.HTTP_201_CREATED)
+        res_easy_password = self.client.post(reverse('store_api:register'), data=easy_password)
+        res_no_password_confirmation = self.client.post(reverse('store_api:register'), data=no_password_confirmation)
+        res_user1 = self.client.post(reverse('store_api:register'), data=user1)
+        res_email_exists = self.client.post(reverse('store_api:register'), data=email_exists)
+        res_birth_date_wrong = self.client.post(reverse('store_api:register'), data=birth_date_wrong)
+        res_user2 = self.client.post(reverse('store_api:register'), data=user2)
+        res_user3 = self.client.post(reverse('store_api:register'), data=user3)
+        self.assertEqual(res_easy_password.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res_no_password_confirmation.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res_user1.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res_email_exists.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res_birth_date_wrong.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res_user2.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res_user3.status_code, status.HTTP_201_CREATED)
 
 
 
