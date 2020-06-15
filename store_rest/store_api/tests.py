@@ -381,6 +381,19 @@ class StoreRestTestCase(TestCase):
         user1.is_staff = True
         user1.save()
         self.setOrders()
+        # Try to access order from user3 authenticated with other user, non admin
+        user2 = User.objects.get(email='user2@test.com')
+        token = self.client.post(
+            reverse('store_api:get_token'),
+            data={'username': 'user2@test.com', 'password': 'wefcwefew2'})
+        self.assertEqual(token.status_code, status.HTTP_200_OK)
+        self.client.force_authenticate(user=user2)
+        res_order_from_other_user = self.client.get(reverse("store_api:user_orders", kwargs={'pk': 3}))
+        self.assertEqual(res_order_from_other_user.status_code, status.HTTP_403_FORBIDDEN)
+        # Access order from same non-admin-user
+        res_order_from_same_user = self.client.get(reverse("store_api:user_orders", kwargs={'pk': user2.id}))
+        self.assertEqual(res_order_from_same_user.status_code, status.HTTP_200_OK)
+
 
     def setInvalidOrdersItems(self):
         res_no_product_no_order_no_quantity = self.client.post(reverse('store_api:order_items'),
@@ -484,8 +497,6 @@ class StoreRestTestCase(TestCase):
         res_product4_order3_user1 = self.client.post(reverse('store_api:order_items'), data=self.product4_order3_user1)
         res_product1_order3_user1 = self.client.post(reverse('store_api:order_items'), data=self.product5_order2_user1)
         res_product3_order3_user1 = self.client.post(reverse('store_api:order_items'), data=self.product6_order1_user3)
-
-        print(res_product1_order1_user1)
 
         self.assertEqual(res_product1_order1_user1.status_code, status.HTTP_201_CREATED)
         self.assertEqual(res_product2_order1_user1.status_code, status.HTTP_201_CREATED)
