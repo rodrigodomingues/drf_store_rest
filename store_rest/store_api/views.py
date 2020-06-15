@@ -3,17 +3,23 @@ import logging
 from django.shortcuts import render
 from django.db.models import Sum, F, DecimalField
 from rest_framework import viewsets, mixins
-from rest_framework.decorators import action
+from rest_framework.decorators import action, permission_classes
+from rest_framework.exceptions import PermissionDenied
 
 from rest_framework.response import Response
-from rest_framework import permissions
+from rest_framework import permissions, status
 from .models import User, Product, OrderItem, Order
+from .permissions import IsOwner
 from .serializers import UserSerializer, ProductSerializer, OrderSerializer, OrderItemSerializer
 
 
 class UserRegisterAPIView(viewsets.ModelViewSet):
     """
     Class responsible to process the requests for User register
+
+    Provides the following view routes and methods
+        register_view (post - create)
+
     This is splitted from the other user viewset class due to allowing the operation without permissions
     """
     # The model object to be queried
@@ -35,13 +41,20 @@ class UserRegisterAPIView(viewsets.ModelViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     """
     Class responsible to process the requests for User query
+
+    Provides the following view routes and methods:
+        users_view (get - list)
+        user_view  (get - detail, put - update)
+        users_order_view (get - detail)
+
     Implements the following endpoints:
-        orders: Returns all orders and respective items made by the user
+        orders (get): Returns all orders and respective items made by the user
     """
     # The model object to be queried
     queryset = User.objects.all()
     # The serializer to process the data objects
     serializer_class = UserSerializer
+    permission_classes = (permissions.IsAuthenticated,)
 
     @action(detail=False)
     def orders(self, request, pk=None):
@@ -52,6 +65,9 @@ class UserViewSet(viewsets.ModelViewSet):
         :param pk: The user ID
         :return: The paginated serialized orders made by this user
         """
+        # A simple validation (it seems for this method the validation classes are not being applied!)
+        if request.user.id != pk and not request.user.is_staff:
+            raise PermissionDenied('User not authorized to perform this operation', status.HTTP_403_FORBIDDEN)
         self.pagination_class.page_size = 10
         orders = Order.objects.filter(user_id=pk)
         orders_items = OrderItem.objects.filter(order_id__in=orders)
@@ -64,6 +80,10 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = OrderItemSerializer(orders_items, many=True)
         return Response(serializer.data)
 
+    """
+        Specifies the userviews to be informed in the routes
+    """
+
     @classmethod
     def users_view(cls):
         return cls.as_view({
@@ -72,6 +92,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @classmethod
     def user_view(cls):
+        cls.permission_classes = (permissions.IsAuthenticated, IsOwner,)
         return cls.as_view({
             'get': 'retrieve',
             'put': 'update'
@@ -79,6 +100,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @classmethod
     def user_orders_view(cls):
+        cls.permission_classes = (permissions.IsAuthenticated, IsOwner,)
         return cls.as_view({
             'get': 'orders'
         })
@@ -87,9 +109,16 @@ class UserViewSet(viewsets.ModelViewSet):
 class ProductsViewSet(viewsets.ModelViewSet):
     """
     Class responsible to process the requests for products.
-    Returns the list of products or create a new product to add to the list
-    Implements the endpoint 'high_orders' to return a list of products that are part of orders with
-    more than 1 product and a total greater than 100.
+
+    Provides the following view routes and methods:
+        products_view (get - list)
+        product_create_view (post - create)
+        product_view (get - retrieve, put - update)
+        product_high_order_view (get - retrieve)
+
+    Implements the following endpoints:
+        high_orders: return a list of products that are part of orders with
+                    more than 1 product and a total greater than 100.
     """
     # The model object to be queried
     queryset = Product.objects.all()
@@ -105,11 +134,14 @@ class ProductsViewSet(viewsets.ModelViewSet):
         :param pk: Not used
         :return: A list of objects that matches the query
         """
-        high_orders = Order.objects.annotate(
-            total=Sum(
-                F('items__quantity') * F('items__product__price'), output_field=DecimalField()
-            ).filter(total__gt=100)
-        )
+        try:
+            high_orders = Order.objects.annotate(
+                total=Sum(
+                    F('items__quantity') * F('items__product__price'), output_field=DecimalField()
+                ).filter(total__gt=100)
+            )
+        except TypeError:
+            return Response({})
         # From the orders, select only those with more than 1 products
         multi_products = high_orders
         products = self.queryset.filter(orderitem__order__in=multi_products)
@@ -124,12 +156,15 @@ class ProductsViewSet(viewsets.ModelViewSet):
 
     @classmethod
     def product_create_view(cls):
+        # Just create products if authenticated and staff
+        cls.permission_classes = (permissions.IsAuthenticated, permissions.IsAdminUser)
         return cls.as_view({
             'post': 'create'
         })
 
     @classmethod
     def product_view(cls):
+        # Due to the same name, permissions won't be applied, but TODO: should be applied to `PUT`
         return cls.as_view({
             'get': 'retrieve',
             'put': 'update'
@@ -137,6 +172,7 @@ class ProductsViewSet(viewsets.ModelViewSet):
 
     @classmethod
     def product_high_orders_view(cls):
+        # Only apply the is_authenticated permission
         return cls.as_view({
             'get': 'high_orders'
         })
@@ -145,6 +181,11 @@ class ProductsViewSet(viewsets.ModelViewSet):
 class OrdersViewSet(viewsets.ModelViewSet):
     """
     Class responsible to process request to Orders
+
+    Provides the following view routes and methods:
+        orders_view (get - list)
+        orders_create_view (post - create)
+        order_view (get - retrieve, put - update)
     """
     # The model object to perform the queries
     queryset = Order.objects.all()
@@ -153,18 +194,22 @@ class OrdersViewSet(viewsets.ModelViewSet):
 
     @classmethod
     def orders_view(cls):
+        cls.permission_classes = (permissions.IsAuthenticated, permissions.IsAdminUser,)
         return cls.as_view({
             'get': 'list'
         })
 
     @classmethod
     def orders_create_view(cls):
+        cls.permission_classes = (permissions.IsAuthenticated, permissions.IsAdminUser,)
         return cls.as_view({
             'post': 'create'
         })
 
     @classmethod
     def order_view(cls):
+        cls.permission_classes = (((permissions.IsAuthenticated & IsOwner) |
+                                   (permissions.IsAuthenticated & permissions.IsAdminUser)),)
         return cls.as_view({
             'get': 'retrieve',
             'put': 'update'
@@ -174,11 +219,15 @@ class OrdersViewSet(viewsets.ModelViewSet):
 class OrderItemViewSet(viewsets.ModelViewSet):
     """
     Class responsible to process Order Items
+    Provides the following view routes and methods:
+        order_items_view (get - list, post - create)
+        order_item_view (get - retrieve, put - update)
     """
     # the model object to perform the queries
     queryset = OrderItem.objects.all()
     # The serializer to process the data objects
     serializer_class = OrderItemSerializer
+    # Only allow if authenticated and is owner or if authenticated and is admin
 
     @classmethod
     def order_items_view(cls):
