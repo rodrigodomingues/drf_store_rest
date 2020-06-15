@@ -33,6 +33,7 @@ urlpatterns = format_suffix_patterns([
     path('products/create', ProductsViewSet.product_create_view(), name='products_create'),
     path('product/<int:pk>', ProductsViewSet.product_view(), name='product'),
     path('products/high_orders', ProductsViewSet.product_high_orders_view(), name='high_orders'),
+    path('products/search/<str:payload>', ProductsViewSet.product_search_view(), name='product_search'),
     path('get_token/', obtain_auth_token, name='get_token')
 ])
 

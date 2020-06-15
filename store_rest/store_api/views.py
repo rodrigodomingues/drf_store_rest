@@ -1,7 +1,7 @@
 import logging
 
 from django.shortcuts import render
-from django.db.models import Sum, F, DecimalField
+from django.db.models import Sum, F, Q, DecimalField
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action, permission_classes
 from rest_framework.exceptions import PermissionDenied
@@ -71,13 +71,13 @@ class UserViewSet(viewsets.ModelViewSet):
         self.pagination_class.page_size = 10
         orders = Order.objects.filter(user_id=pk)
         orders_items = OrderItem.objects.filter(order_id__in=orders)
-        page = self.paginate_queryset(orders_items)
+        page = self.paginate_queryset(orders)
 
         if page is not None:
-            serializer = OrderItemSerializer(page, many=True)
+            serializer = OrderSerializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
-        serializer = OrderItemSerializer(orders_items, many=True)
+        serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
 
     """
@@ -138,14 +138,22 @@ class ProductsViewSet(viewsets.ModelViewSet):
             high_orders = Order.objects.annotate(
                 total=Sum(
                     F('items__quantity') * F('items__product__price'), output_field=DecimalField()
-                ).filter(total__gt=100)
-            )
+                )
+            ).filter(total__gt=100)
         except TypeError:
             return Response({})
+
         # From the orders, select only those with more than 1 products
-        multi_products = high_orders
+        multi_products = [order for order in high_orders if order.items.count() > 1]
+
         products = self.queryset.filter(orderitem__order__in=multi_products)
         serializer = self.serializer_class(products, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False)
+    def product_search(self, request, payload):
+        search_result = self.queryset.filter(Q(name__icontains=payload) | Q(description__icontains=payload))
+        serializer = self.serializer_class(search_result, many=True)
         return Response(serializer.data)
 
     @classmethod
@@ -175,6 +183,13 @@ class ProductsViewSet(viewsets.ModelViewSet):
         # Only apply the is_authenticated permission
         return cls.as_view({
             'get': 'high_orders'
+        })
+
+    @classmethod
+    def product_search_view(cls):
+        cls.permission_classes = (permissions.AllowAny,)
+        return cls.as_view({
+            'get': 'product_search'
         })
 
 
