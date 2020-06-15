@@ -2,6 +2,7 @@ from django.urls import path
 
 from rest_framework.routers import SimpleRouter
 from rest_framework.urlpatterns import format_suffix_patterns
+from rest_framework.authtoken.views import obtain_auth_token
 
 from .views import (
     UserRegisterAPIView,
@@ -31,7 +32,8 @@ urlpatterns = format_suffix_patterns([
     path('products/', ProductsViewSet.products_view(), name='products'),
     path('products/create', ProductsViewSet.product_create_view(), name='products_create'),
     path('product/<int:pk>', ProductsViewSet.product_view(), name='product'),
-    path('products/high_orders', ProductsViewSet.product_high_orders_view(), name='high_orders')
+    path('products/high_orders', ProductsViewSet.product_high_orders_view(), name='high_orders'),
+    path('get_token/', obtain_auth_token, name='get_token')
 ])
 
 urlpatterns += router.urls

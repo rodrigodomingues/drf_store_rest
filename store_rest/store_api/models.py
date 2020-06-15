@@ -2,9 +2,12 @@ from decimal import Decimal
 
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models.signals import post_save
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db.models import Sum, F, DecimalField
+from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
+from rest_framework.authtoken.models import Token
 
 
 class UserManager(BaseUserManager):
@@ -15,7 +18,7 @@ class UserManager(BaseUserManager):
 
     use_in_migrations = True
 
-    def _create_user(self,email,password, **extra_fields):
+    def _create_user(self, email, password, **extra_fields):
         """Create and save a User with the given email and password."""
         if not email:
             raise ValueError('the email must be set')
@@ -30,6 +33,9 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
         return self._create_user(email, password, **extra_fields)
+
+    def create(self, email, password=None, **extra_fields):
+        return self.create_user(email, password, **extra_fields)
 
     def create_superuser(self, email, password, **extra_fields):
         """Create and save a SuperUser with the given email and password."""
@@ -152,3 +158,10 @@ class OrderItem(Base):
     def item_total(self):
         total = self.product.price * self.quantity
         return total
+
+
+# This receiver will handle a token creation immediately a new user is created
+@receiver(post_save, sender=User)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)
